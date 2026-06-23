@@ -1,11 +1,13 @@
 package mg.itu.rohymvc.utilitaire;
 
 import java.io.File;
-
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import mg.itu.rohymvc.annotation.Controller;
+import mg.itu.rohymvc.annotation.UrlMapping;
+import mg.itu.rohymvc.dto.MethodDTO;
 
 
 
@@ -34,7 +36,7 @@ public class Utils {
             if (!directory.exists()) {
                 continue;
             }
-            scanDirectory(directory, packageName, classes);
+            scanDirectory(directory, pkg, classes);
         }
     }
    return classes;
@@ -81,5 +83,51 @@ public ArrayList<Class<?>> findController(String packageName) throws Exception{
             }
         }
        return listcontrollers;
+}
+public ArrayList<MethodDTO> findAnnotedMethod(Class <?> c) throws Exception{
+      ArrayList<MethodDTO> methods=new ArrayList<>();
+      try {
+           Method[] mt=c.getDeclaredMethods();
+           for (Method m : mt) {
+              if (isAnnotedMethod(m)) {
+                  MethodDTO mdto=new MethodDTO();
+                  mdto.setController(c.getSimpleName());
+                  mdto.setMethodname(m.getName());
+                  mdto.setUrl(m.getAnnotation(UrlMapping.class).url());
+                  methods.add(mdto);
+              }
+              else{
+                continue;
+              }
+           } 
+
+
+      } catch (Exception e) {
+       throw e;
+      }
+      return methods;
+     
+}
+private boolean isAnnotedMethod(Method m){
+      return m.isAnnotationPresent(UrlMapping.class);
+      
+}
+public ArrayList<MethodDTO> findAllAnnotedMethods(String packageName) throws Exception{
+      ArrayList<MethodDTO> retours=new ArrayList<>();
+      ArrayList<Class<?>> classes=findController(packageName);
+        for (Class<?> class1 : classes) {
+            retours.addAll(findAnnotedMethod(class1));
+        }
+     return retours;
+}
+public ArrayList<MethodDTO> getMethodByUrl(String url,ArrayList<MethodDTO> dto)
+{
+    ArrayList<MethodDTO> mdto=new ArrayList<>();
+        for (MethodDTO methodDTO : dto) {
+            if(url.equals(methodDTO.getUrl())){
+                mdto.add(methodDTO);
+            }
+        }
+    return mdto;
 }
 }

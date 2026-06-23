@@ -8,25 +8,27 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mg.itu.rohymvc.dto.MethodDTO;
 import mg.itu.rohymvc.utilitaire.Utils;
 
 
 
 public class FrontServletController extends HttpServlet {
-    ArrayList<String> controllerNames;
+       ArrayList<MethodDTO> mtdo;
+       Utils utils;
     public void init() throws ServletException{
+        
         String scanPackage = this.getInitParameter("packcontroller");
-        Utils utils=new Utils();
-        controllerNames=new ArrayList<>();
-        ArrayList<Class<?>> classes;
+        utils=new Utils();
+        mtdo=new ArrayList<>();
+       
     
             try {
-                classes = utils.findController(scanPackage);
-                   for (Class<?> class1 : classes) {
-           controllerNames.add(class1.getSimpleName());   
-        }
+                mtdo = utils.findAllAnnotedMethods(scanPackage);
+                    
+        
             } catch (Exception e) {
-               
+               e.printStackTrace();
             }
           
         
@@ -35,14 +37,26 @@ public class FrontServletController extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
+      String uri = request.getRequestURI();
+      String contextPath = request.getContextPath();
+String route = uri.substring(contextPath.length());
+       
            PrintWriter out = response.getWriter();
         try {
             out.println("<html><body>");
             out.println("<h1>Welcome to the Home Page</h1>");
+         ArrayList<MethodDTO> mdo=utils.getMethodByUrl(route, mtdo);
+         if (mdo.isEmpty()) {
+            mdo.addAll(mtdo);
+         }
+         out.println("<ol>");
+         for (MethodDTO  methode : mdo) {
+               out.println("<li>"+methode+"</li>");
+         }
+          out.println("</ol>");
+            
          
-            for (String string : controllerNames) {
-            out.println(string+"\n");
-            }
+           
             out.println("</body></html>");
     }      
         finally {
