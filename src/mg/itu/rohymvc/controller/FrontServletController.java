@@ -2,29 +2,32 @@ package mg.itu.rohymvc.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import mg.itu.rohymvc.dto.MethodDTO;
+
+import mg.itu.rohymvc.dto.URLMapping;
 import mg.itu.rohymvc.utilitaire.Utils;
 
 
 
 public class FrontServletController extends HttpServlet {
-       ArrayList<MethodDTO> mtdo;
+       HashMap<String,URLMapping> urlmapped;
        Utils utils;
     public void init() throws ServletException{
         
         String scanPackage = this.getInitParameter("packcontroller");
         utils=new Utils();
-        mtdo=new ArrayList<>();
+        urlmapped=new HashMap<>();
        
     
             try {
-                mtdo = utils.findAllAnnotedMethods(scanPackage);
+               utils.scanClassPath(scanPackage, urlmapped);
                     
         
             } catch (Exception e) {
@@ -45,15 +48,19 @@ String route = uri.substring(contextPath.length());
         try {
             out.println("<html><body>");
             out.println("<h1>Welcome to the Home Page</h1>");
-         ArrayList<MethodDTO> mdo=utils.getMethodByUrl(route, mtdo);
-         if (mdo.isEmpty()) {
-            mdo.addAll(mtdo);
-         }
-         out.println("<ol>");
-         for (MethodDTO  methode : mdo) {
-               out.println("<li>"+methode+"</li>");
-         }
-          out.println("</ol>");
+            URLMapping unique=urlmapped.get(route);
+            out.println("<ol>");
+            if (unique==null) {
+                for (Map.Entry<String, URLMapping> entry : urlmapped.entrySet()) {
+    String url = entry.getKey();
+    URLMapping mapping = entry.getValue();
+         out.println("<li>URL:"+url+" ");out.println(mapping+"</li>");
+}
+            }
+            else{
+              out.println("URL:"+route+" ");out.println(unique);
+            }
+            out.println("</ol>");
             
          
            
