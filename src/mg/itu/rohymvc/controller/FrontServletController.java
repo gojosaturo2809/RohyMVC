@@ -12,12 +12,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import mg.itu.rohymvc.dto.URLMapping;
+import mg.itu.rohymvc.dto.URLMethod;
 import mg.itu.rohymvc.utilitaire.Utils;
 
 
 
 public class FrontServletController extends HttpServlet {
-       HashMap<String,URLMapping> urlmapped;
+       HashMap<URLMethod,URLMapping> urlmapped;
        Utils utils;
     public void init() throws ServletException{
         
@@ -48,13 +49,20 @@ String route = uri.substring(contextPath.length());
         try {
             out.println("<html><body>");
             out.println("<h1>Welcome to the Home Page</h1>");
-            URLMapping unique=urlmapped.get(route);
+            URLMapping unique=urlmapped.get(new URLMethod(route, request.getMethod()));
             out.println("<ol>");
             if (unique==null) {
-                for (Map.Entry<String, URLMapping> entry : urlmapped.entrySet()) {
-    String url = entry.getKey();
+                for (Map.Entry<URLMethod, URLMapping> entry : urlmapped.entrySet()) {
+    URLMethod urlMethod = entry.getKey();
     URLMapping mapping = entry.getValue();
-         out.println("<li>URL:"+url+" ");out.println(mapping+"</li>");
+         out.println("<li>URL:"+urlMethod.getUrl()+" ");out.println(mapping+"</li>");
+         if(urlMethod.getMethod().equals("POST")){
+             out.println("<form method='POST' action='"+urlMethod.getUrl()+"'>");
+                out.println("<input type='text' name='param1' placeholder='Enter param1'>");
+                out.println("<input type='text' name='param2' placeholder='Enter param2'>");
+             out.println("<input type='submit' value='Submit'>");
+                out.println("</form>");
+         }
 }
             }
             else{

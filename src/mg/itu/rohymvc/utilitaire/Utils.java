@@ -11,10 +11,11 @@ import java.util.HashMap;
 import mg.itu.rohymvc.annotation.Controller;
 import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.dto.URLMapping;
+import mg.itu.rohymvc.dto.URLMethod;
 
 public class Utils {
 
-    public void scanClassPath(String packageName,HashMap<String,URLMapping> urlmap) throws Exception {
+    public void scanClassPath(String packageName,HashMap<URLMethod,URLMapping> urlmap) throws Exception {
 
         String[] packages = packageName.split(";");
         
@@ -46,7 +47,7 @@ public class Utils {
     private void scanDirectory(
             File directory,
             String packageName,
-            HashMap<String,URLMapping> urlMap
+            HashMap<URLMethod, URLMapping> urlMap
             )
             throws Exception {
 
@@ -78,7 +79,7 @@ public class Utils {
                              URLMapping mapped=new URLMapping();
                              mapped.setC(c);
                              mapped.setMethods(m);
-                        urlMap.put(annotation.url(), mapped);
+                        urlMap.put(new URLMethod(annotation.url(), annotation.method()), mapped);
                 }  
                      }                    
                 }
