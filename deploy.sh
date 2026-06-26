@@ -10,6 +10,7 @@ BIN_DIR="bin"
 LIB_DIR="lib"
 SERVLET_API_JAR="$LIB_DIR/servlet-api.jar"
 JAR_NAME="$APP_NAME.jar"
+TEST_DIR="/mnt/f/STUDY/Web dynamique/FrameworkTest"
 
 # ==============================
 # CLEAN OLD BUILD
@@ -48,3 +49,6 @@ fi
 # CLEAN TEMP FILES
 # ==============================
 echo "Build terminé"
+
+cp  $JAR_NAME $TEST_DIR/lib/
+echo "JAR copié dans le projet de test : $TEST_DIR/lib/$JAR_NAME"

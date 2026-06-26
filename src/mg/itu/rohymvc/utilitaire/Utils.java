@@ -88,4 +88,11 @@ public class Utils {
             }
         }
     }
+  public Object invokeMethod(URLMapping mapping) throws Exception {
+    Object controller = mapping.getC()
+            .getDeclaredConstructor()
+            .newInstance();
+
+    return mapping.getMethods().invoke(controller);
+}
 }
