@@ -10,7 +10,7 @@ BIN_DIR="bin"
 LIB_DIR="lib"
 SERVLET_API_JAR="$LIB_DIR/servlet-api.jar"
 JAR_NAME="$APP_NAME.jar"
-TEST_DIR="/mnt/f/STUDY/Web dynamique/FrameworkTest"
+TEST_DIR="/home/itu/BOSS/S4/WebDyn/srping-framework-app-test"
 
 # ==============================
 # CLEAN OLD BUILD

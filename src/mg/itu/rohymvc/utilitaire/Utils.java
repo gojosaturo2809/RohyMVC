@@ -15,7 +15,7 @@ import mg.itu.rohymvc.dto.URLMethod;
 
 public class Utils {
 
-    public void scanClassPath(String packageName,HashMap<URLMethod,URLMapping> urlmap) throws Exception {
+    public void scanClassPath(String packageName,HashMap<URLMethod,URLMapping> urlmap) throws RuntimeException,Exception {
 
         String[] packages = packageName.split(";");
         
@@ -49,7 +49,7 @@ public class Utils {
             String packageName,
             HashMap<URLMethod, URLMapping> urlMap
             )
-            throws Exception {
+            throws RuntimeException,ClassNotFoundException {
 
         File[] files = directory.listFiles();
 
@@ -79,7 +79,11 @@ public class Utils {
                              URLMapping mapped=new URLMapping();
                              mapped.setC(c);
                              mapped.setMethods(m);
-                        urlMap.put(new URLMethod(annotation.url(), annotation.method()), mapped);
+                            URLMethod um=new URLMethod(annotation.url(), annotation.method());
+                            if (urlMap.containsKey(um)) {
+                                throw new RuntimeException("L'URL: "+annotation.url()+" de methode:"+annotation.method()+ " dans le controller "+c.getSimpleName()+" est deja associe a un URL de meme methode");
+                            }
+                        urlMap.put(um, mapped);
                 }  
                      }                    
                 }
@@ -88,7 +92,7 @@ public class Utils {
             }
         }
     }
-  public Object invokeMethod(URLMapping mapping) throws Exception {
+  public static  Object invokeMethod(URLMapping mapping) throws Exception {
     Object controller = mapping.getC()
             .getDeclaredConstructor()
             .newInstance();
