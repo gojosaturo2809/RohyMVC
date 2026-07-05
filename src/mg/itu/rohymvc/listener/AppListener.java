@@ -5,8 +5,8 @@ import java.util.HashMap;
 
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.annotation.WebListener;
-import mg.itu.rohymvc.dto.URLMapping;
-import mg.itu.rohymvc.dto.URLMethod;
+import mg.itu.rohymvc.url.URLMapping;
+import mg.itu.rohymvc.url.URLMethod;
 import mg.itu.rohymvc.utilitaire.Utils;
 @WebListener
 public class AppListener implements ServletContextListener {

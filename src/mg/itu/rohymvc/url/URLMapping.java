@@ -1,4 +1,4 @@
-package mg.itu.rohymvc.dto;
+package mg.itu.rohymvc.url;
 
 import java.lang.reflect.Method;
 

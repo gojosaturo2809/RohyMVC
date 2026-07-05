@@ -1,17 +1,21 @@
 package mg.itu.rohymvc.utilitaire;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 
 import java.util.Enumeration;
 import java.util.HashMap;
 
-
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import mg.itu.rohymvc.annotation.Controller;
 import mg.itu.rohymvc.annotation.UrlMapping;
-import mg.itu.rohymvc.dto.URLMapping;
-import mg.itu.rohymvc.dto.URLMethod;
+import mg.itu.rohymvc.url.URLMapping;
+import mg.itu.rohymvc.url.URLMethod;
+import mg.itu.rohymvc.vue.ModelAndView;
 
 public class Utils {
 
@@ -99,4 +103,20 @@ public class Utils {
 
     return mapping.getMethods().invoke(controller);
 }
+  public static  void renderView(Object result,String prefix,String suffix, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    if (result instanceof String) {
+        String viewName = prefix + (String) result + suffix;
+        
+        request.getRequestDispatcher(viewName).forward(request, response);
+    } else if (result instanceof ModelAndView) {
+        ModelAndView modelAndView = (ModelAndView) result;
+        for (String attribute : modelAndView.getAttributes().keySet()) {
+            request.setAttribute(attribute, modelAndView.getAttributes().get(attribute));
+        }
+        request.getRequestDispatcher(prefix + modelAndView.getView() + suffix).forward(request, response);
+    } else {
+        throw new IllegalArgumentException("Result must be a String or ModelAndView");
+    }
+
+  }
 }

@@ -10,21 +10,26 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import mg.itu.rohymvc.dto.URLMapping;
-import mg.itu.rohymvc.dto.URLMethod;
+import mg.itu.rohymvc.url.URLMapping;
+import mg.itu.rohymvc.url.URLMethod;
 import mg.itu.rohymvc.utilitaire.Utils;
 
 public class FrontServletController extends HttpServlet {
     HashMap<URLMethod, URLMapping> urlmapped;
+    String prefix = "/WEB-INF/views/";
+    String suffix = ".jsp";
+    public void init() throws ServletException {
+        urlmapped = (HashMap<URLMethod, URLMapping>) this.getServletContext().getAttribute("urlmappeds");
+        prefix = this.getServletContext().getInitParameter("prefix");
+        suffix = this.getServletContext().getInitParameter("suffix");
+    }
     
-
 
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws Exception {
         response.setContentType("text/html;charset=UTF-8");
-         urlmapped=(HashMap<URLMethod, URLMapping>)this.getServletContext().getAttribute("urlmappeds");
+      
         String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
         String route = uri.substring(contextPath.length());
@@ -80,8 +85,8 @@ public class FrontServletController extends HttpServlet {
         out.println("<h3>Mapping</h3>");
         out.println("<pre>" + unique + "</pre>");
        Object result = Utils.invokeMethod(unique);
-        out.println("<h3>Method Return</h3>");
-        out.println("<p>" + result.toString() + "</p>");
+         
+        Utils.renderView(result, prefix, suffix, request, response);
     }
 
     out.println("</body>");
