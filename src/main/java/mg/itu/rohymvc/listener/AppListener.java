@@ -15,6 +15,9 @@ public class AppListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce){
          String scanPackage = sce.getServletContext().getInitParameter("packcontroller");
+          System.out.println("=================================");
+    System.out.println("packcontroller = " + scanPackage);
+    System.out.println("=================================");
        Utils  utils = new Utils();
          HashMap<URLMethod, URLMapping> urlmapped=new HashMap<>();
 

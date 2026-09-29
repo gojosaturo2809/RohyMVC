@@ -16,6 +16,8 @@ import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.url.URLMapping;
 import mg.itu.rohymvc.url.URLMethod;
 import mg.itu.rohymvc.vue.ModelAndView;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
 public class Utils {
 
@@ -96,12 +98,18 @@ public class Utils {
             }
         }
     }
-  public static  Object invokeMethod(URLMapping mapping) throws Exception {
+  public static  Object invokeMethod(URLMapping mapping, WebApplicationContext springContext) throws Exception {
     Object controller = mapping.getC()
             .getDeclaredConstructor()
             .newInstance();
+    if (springContext != null) {
+    springContext
+        .getAutowireCapableBeanFactory()
+        .autowireBean(controller);
+}
 
-    return mapping.getMethods().invoke(controller);
+return mapping.getMethods().invoke(controller);
+   
 }
   public static  void renderView(Object result,String prefix,String suffix, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     if (result instanceof String) {
