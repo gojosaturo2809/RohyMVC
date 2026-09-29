@@ -11,6 +11,7 @@ import java.util.HashMap;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mg.itu.rohymvc.annotation.Api;
 import mg.itu.rohymvc.annotation.Controller;
 import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.url.URLMapping;
@@ -111,8 +112,15 @@ public class Utils {
 return mapping.getMethods().invoke(controller);
    
 }
-  public static  void renderView(Object result,String prefix,String suffix, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    if (result instanceof String) {
+  public static  void renderView(Object result,URLMapping mapping,String prefix,String suffix, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  if(mapping.getMethods().isAnnotationPresent(Api.class)) {
+    
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        String jsonResponse = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(result);
+        response.getWriter().write(jsonResponse);
+    }
+    else  if (result instanceof String) {
         String viewName = prefix + (String) result + suffix;
         
         request.getRequestDispatcher(viewName).forward(request, response);
