@@ -65,20 +65,13 @@ public class FrontServletController extends HttpServlet {
 
             } else {
 
-                out.println("<h2>Route Found</h2>");
-
-                out.println("<p><b>URL :</b> " + route + "</p>");
-                out.println("<p><b>HTTP Method :</b> " + request.getMethod() + "</p>");
-
-                out.println("<h3>Mapping</h3>");
-                out.println("<pre>" + unique + "</pre>");
+                
                 Object result = Utils.invokeMethod(unique, springContext);
 
                 Utils.renderView(result,unique, prefix, suffix, request, response);
             }
 
-            out.println("</body>");
-            out.println("</html>");
+          
 
         } catch (Exception e) {
             e.printStackTrace();
