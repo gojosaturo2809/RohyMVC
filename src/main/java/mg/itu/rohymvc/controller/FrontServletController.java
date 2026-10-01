@@ -66,7 +66,7 @@ public class FrontServletController extends HttpServlet {
             } else {
 
                 
-                Object result = Utils.invokeMethod(unique, springContext);
+                Object result = Utils.invokeMethod(unique, springContext, request);
 
                 Utils.renderView(result,unique, prefix, suffix, request, response);
             }

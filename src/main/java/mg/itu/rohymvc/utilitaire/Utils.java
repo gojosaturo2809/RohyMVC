@@ -3,6 +3,7 @@ package mg.itu.rohymvc.utilitaire;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 
 import java.util.Enumeration;
@@ -18,7 +19,7 @@ import mg.itu.rohymvc.url.URLMapping;
 import mg.itu.rohymvc.url.URLMethod;
 import mg.itu.rohymvc.vue.ModelAndView;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+
 
 public class Utils {
 
@@ -99,7 +100,7 @@ public class Utils {
             }
         }
     }
-  public static  Object invokeMethod(URLMapping mapping, WebApplicationContext springContext) throws Exception {
+  public static  Object invokeMethod(URLMapping mapping, WebApplicationContext springContext,HttpServletRequest request) throws Exception {
     Object controller = mapping.getC()
             .getDeclaredConstructor()
             .newInstance();
@@ -108,8 +109,22 @@ public class Utils {
         .getAutowireCapableBeanFactory()
         .autowireBean(controller);
 }
+    Parameter[] parameters = mapping.getMethods().getParameters();
+    Object[] args = new Object[parameters.length];
+   for(int i=0;i<parameters.length;i++) {
+    String paramName = parameters[i].getName();
+    System.out.println("paramName: " + paramName);
+    System.out.println("paramValue: " + request.getParameter(paramName));
+    String paramValue = request.getParameter(paramName);
 
-return mapping.getMethods().invoke(controller);
+    if(paramValue == null) {
+        args[i] = null;
+    } else {
+        args[i] = convert(paramValue, parameters[i].getType());
+    }
+   }
+
+return mapping.getMethods().invoke(controller, args);
    
 }
   public static  void renderView(Object result,URLMapping mapping,String prefix,String suffix, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -135,4 +150,24 @@ return mapping.getMethods().invoke(controller);
     }
 
   }
+  private static Object convert(String value, Class<?> type) {
+
+    if (type == String.class) {
+        return value;
+    }
+
+    if (type == int.class || type == Integer.class) {
+        return Integer.parseInt(value);
+    }
+
+    if (type == double.class || type == Double.class) {
+        return Double.parseDouble(value);
+    }
+
+    if (type == boolean.class || type == Boolean.class) {
+        return Boolean.parseBoolean(value);
+    }
+
+    return value;
+}
 }
