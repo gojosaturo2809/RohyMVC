@@ -7,7 +7,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
-
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Enumeration;
 import java.util.HashMap;
 
@@ -272,6 +273,12 @@ return mapping.getMethods().invoke(controller, args);
     if (type == boolean.class || type == Boolean.class) {
         return Boolean.parseBoolean(value);
     }
+    if (type == LocalDateTime.class) {
+    return LocalDateTime.parse(value);
+}
+if (type == LocalDate.class) {
+    return LocalDate.parse(value);
+}
 
     return value;
 }
