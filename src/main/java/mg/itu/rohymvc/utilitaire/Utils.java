@@ -2,6 +2,8 @@ package mg.itu.rohymvc.utilitaire;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
@@ -18,6 +20,8 @@ import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.url.URLMapping;
 import mg.itu.rohymvc.url.URLMethod;
 import mg.itu.rohymvc.vue.ModelAndView;
+
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 
 
@@ -104,14 +108,46 @@ public class Utils {
     Object controller = mapping.getC()
             .getDeclaredConstructor()
             .newInstance();
-    if (springContext != null) {
-    springContext
-        .getAutowireCapableBeanFactory()
-        .autowireBean(controller);
-}
+   
     Parameter[] parameters = mapping.getMethods().getParameters();
     Object[] args = new Object[parameters.length];
+    
    for(int i=0;i<parameters.length;i++) {
+    Class<?> type = parameters[i].getType();
+    if(type.equals(ApplicationContext.class)) {
+        args[i] = springContext;
+        continue;
+    }
+  if(type.isArray()) {
+      Class<?> componentType = type.getComponentType();
+    
+
+    
+        String paramName = parameters[i].getName();
+        String[] paramValues = request.getParameterValues(paramName);
+        if (paramValues != null) {
+          
+            Object array = Array.newInstance(componentType, paramValues.length);
+            for (int j = 0; j < paramValues.length; j++) {
+                Array.set(array, j, convert(paramValues[j], componentType));
+            }
+            args[i] = array;
+        } else {
+            args[i] = null;
+        }
+        continue;
+  }
+if (!type.isPrimitive()
+        && !type.isInterface()
+        && !type.isEnum()
+        && !type.isArray()
+        && !type.equals(String.class)) {
+
+    Object obj = type.getDeclaredConstructor().newInstance();
+        remplirObjet(type,obj, request);
+        args[i] = obj;
+        continue;
+}
     String paramName = parameters[i].getName();
     System.out.println("paramName: " + paramName);
     System.out.println("paramValue: " + request.getParameter(paramName));
@@ -127,6 +163,75 @@ public class Utils {
 return mapping.getMethods().invoke(controller, args);
    
 }
+       private static void remplirObjet(
+        Class<?> type,
+        Object obj,
+        HttpServletRequest request) {
+
+    for (Method method : type.getMethods()) {
+
+        if (method.getName().startsWith("set")
+                && method.getParameterCount() == 1) {
+
+            String setterName = method.getName();
+
+            String fieldName = setterName.substring(3);
+
+            fieldName = Character.toLowerCase(fieldName.charAt(0))
+                    + fieldName.substring(1);
+
+            String value = request.getParameter(fieldName);
+
+            Class<?> setterType = method.getParameterTypes()[0];
+
+            if (!setterType.isPrimitive()
+                    && !setterType.equals(String.class)) {
+
+                Object nestedObj = null;
+
+                try {
+
+                    nestedObj =
+                            setterType.getDeclaredConstructor().newInstance();
+
+                    remplirObjet(
+                            setterType,
+                            nestedObj,
+                            request
+                    );
+
+                    method.invoke(obj, nestedObj);
+
+                } catch (InstantiationException
+                        | IllegalAccessException
+                        | InvocationTargetException
+                        | NoSuchMethodException e) {
+
+                    e.printStackTrace();
+                }
+
+            } else {
+
+                if (value != null) {
+
+                    Object convertedValue =
+                            convert(value, setterType);
+
+                    try {
+
+                        method.invoke(obj, convertedValue);
+
+                    } catch (IllegalAccessException
+                            | InvocationTargetException e) {
+
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+}
+
   public static  void renderView(Object result,URLMapping mapping,String prefix,String suffix, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
   if(mapping.getMethods().isAnnotationPresent(Api.class)) {
     
