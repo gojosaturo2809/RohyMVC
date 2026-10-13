@@ -11,10 +11,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
 import java.util.HashMap;
-
+import mg.itu.rohymvc.fichiermap.MappingFile;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import mg.itu.rohymvc.annotation.Api;
 import mg.itu.rohymvc.annotation.Controller;
 import mg.itu.rohymvc.annotation.UrlMapping;
@@ -197,6 +198,26 @@ public class Utils {
 
                 Class<?> setterType = method.getParameterTypes()[0];
 
+
+                if (setterType.equals(MappingFile.class)) {
+
+    try {
+        Part part = request.getPart(param + "." + fieldName);
+
+        MappingFile fichier = convertirFichier(part);
+
+        method.invoke(obj, fichier);
+
+    } catch (Exception e) {
+        throw new RuntimeException(
+            "Erreur lors du traitement du fichier : " + fieldName,
+            e
+        );
+    }
+
+    continue;
+}
+
                 if (!setterType.isPrimitive()
                         && !setterType.equals(String.class)) {
 
@@ -209,7 +230,7 @@ public class Utils {
                         remplirObjet(
                                 setterType,
                                 nestedObj,
-                                request, fieldName);
+                                request, param + "." + fieldName);
 
                         method.invoke(obj, nestedObj);
 
