@@ -8,6 +8,7 @@ import java.util.Map;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +17,7 @@ import mg.itu.rohymvc.url.URLMethod;
 import mg.itu.rohymvc.utilitaire.Utils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
+@MultipartConfig 
 public class FrontServletController extends HttpServlet {
     HashMap<URLMethod, URLMapping> urlmapped;
     String prefix = "/WEB-INF/views/";
