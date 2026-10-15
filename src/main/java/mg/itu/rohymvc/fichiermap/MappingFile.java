@@ -3,6 +3,8 @@ public class MappingFile {
      String nomFichier;
      String extension;
      byte[] contenu;
+     String cheminStockage;
+   
      public String getNomFichier() {
          return nomFichier;
      }
@@ -21,4 +23,10 @@ public class MappingFile {
      public void setContenu(byte[] contenu) {
          this.contenu = contenu;
      }
+     public void setCheminStockage(String string) {
+        
+     }
+       public String getCheminStockage() {
+        return cheminStockage;
+    }
 }

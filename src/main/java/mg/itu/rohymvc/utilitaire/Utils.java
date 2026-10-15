@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
@@ -262,6 +263,103 @@ public class Utils {
             }
         }
     }
+
+        
+private static MappingFile convertirFichier(Part part)
+        throws IOException {
+
+    if (part == null || part.getSize() == 0) {
+        return null;
+    }
+
+    UploadConfig config = UploadConfig.load();
+
+    // Vérification de la taille
+    if (part.getSize() > config.getMaxFileSize()) {
+        throw new IllegalArgumentException(
+            "Fichier trop volumineux : " + part.getSize()
+            + " octets. Maximum autorisé : "
+            + config.getMaxFileSize() + " octets."
+        );
+    }
+
+    String submittedName = part.getSubmittedFileName();
+
+    if (submittedName == null || submittedName.isBlank()) {
+        throw new IllegalArgumentException(
+            "Nom de fichier manquant."
+        );
+    }
+
+    String nomOriginal = submittedName.replace('\\', '/');
+    nomOriginal = nomOriginal.substring(
+        nomOriginal.lastIndexOf('/') + 1
+    );
+
+    if (nomOriginal.isBlank()
+            || nomOriginal.equals(".")
+            || nomOriginal.equals("..")) {
+        throw new IllegalArgumentException(
+            "Nom de fichier invalide."
+        );
+    }
+
+    
+    int point = nomOriginal.lastIndexOf('.');
+    String extension = point > 0
+            ? nomOriginal.substring(point + 1)
+            : "";
+
+
+    byte[] contenu;
+
+    try (var input = part.getInputStream()) {
+        contenu = input.readAllBytes();
+    }
+
+    String nomStockage;
+
+    if (config.isOverwrite()) {
+        nomStockage = nomOriginal;
+    } else {
+        String extensionFichier = extension.isEmpty()
+                ? ""
+                : "." + extension;
+
+        nomStockage = java.util.UUID.randomUUID()
+                + extensionFichier;
+    }
+
+    Path destination = config.getDirectory()
+            .resolve(nomStockage)
+            .normalize();
+
+    // Vérifier que la destination reste dans le répertoire autorisé
+    if (!destination.getParent().equals(
+            config.getDirectory().toAbsolutePath().normalize())) {
+        throw new IllegalArgumentException(
+            "Destination de fichier invalide."
+        );
+    }
+
+  
+        java.nio.file.Files.write(
+            destination,
+            contenu,
+            java.nio.file.StandardOpenOption.CREATE_NEW
+        );
+    
+
+    MappingFile fichier = new MappingFile();
+    fichier.setNomFichier(nomOriginal);
+    fichier.setExtension(extension);
+    fichier.setContenu(contenu);
+    fichier.setCheminStockage(destination.toString());
+
+    return fichier;
+}
+
+    
 
     private static List<?> remplirList(
             Parameter parameter,
