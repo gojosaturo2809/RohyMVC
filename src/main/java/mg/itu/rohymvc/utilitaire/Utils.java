@@ -177,6 +177,15 @@ public class Utils {
         return mapping.getMethods().invoke(controller, args);
 
     }
+    private static boolean contientParametres(
+        HttpServletRequest request,
+        String prefix) {
+
+    return request.getParameterMap()
+            .keySet()
+            .stream()
+            .anyMatch(name -> name.startsWith(prefix + "."));
+}
 
     private static void remplirObjet(
             Class<?> type,
@@ -222,18 +231,24 @@ public class Utils {
                 if (!setterType.isPrimitive()
                         && !setterType.equals(String.class)) {
 
-                    Object nestedObj = null;
+                   String nestedPrefix = param + "." + fieldName;
 
-                    try {
+    if (!contientParametres(request, nestedPrefix)) {
+        continue;
+    }
 
-                        nestedObj = setterType.getDeclaredConstructor().newInstance();
+    try {
+        Object nestedObj =
+                setterType.getDeclaredConstructor().newInstance();
 
-                        remplirObjet(
-                                setterType,
-                                nestedObj,
-                                request, param + "." + fieldName);
+        remplirObjet(
+                setterType,
+                nestedObj,
+                request,
+                nestedPrefix
+        );
 
-                        method.invoke(obj, nestedObj);
+        method.invoke(obj, nestedObj);
 
                     } catch (InstantiationException
                             | IllegalAccessException
@@ -350,6 +365,7 @@ private static MappingFile convertirFichier(Part part)
         );
     
 
+    // Construire l'objet transmis au contrôleur
     MappingFile fichier = new MappingFile();
     fichier.setNomFichier(nomOriginal);
     fichier.setExtension(extension);
