@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.Enumeration;
 import java.util.HashMap;
 import mg.itu.rohymvc.fichiermap.MappingFile;
+import mg.itu.rohymvc.session.MySession;
+import mg.itu.rohymvc.session.SessionManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -135,6 +137,10 @@ public class Utils {
                 args[i] = springContext;
                 continue;
             }
+            if (type.equals(MySession.class)) {
+    args[i] = SessionManager.getSession(request);
+    continue;
+}
             if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
 
