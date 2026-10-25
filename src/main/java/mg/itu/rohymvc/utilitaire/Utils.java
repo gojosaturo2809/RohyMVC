@@ -7,15 +7,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
 import java.util.HashMap;
-
+import mg.itu.rohymvc.fichiermap.MappingFile;
+import mg.itu.rohymvc.session.MySession;
+import mg.itu.rohymvc.session.SessionManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import mg.itu.rohymvc.annotation.Api;
+import mg.itu.rohymvc.annotation.AuthRequired;
 import mg.itu.rohymvc.annotation.Controller;
 import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.url.URLMapping;
@@ -94,6 +100,7 @@ public class Utils {
                             mapped.setC(c);
                             mapped.setMethods(m);
                             URLMethod um = new URLMethod(annotation.url(), annotation.method());
+
                             if (urlMap.containsKey(um)) {
                                 throw new RuntimeException("L'URL: " + annotation.url() + " de methode:"
                                         + annotation.method() + " dans le controller " + c.getSimpleName()
@@ -109,7 +116,15 @@ public class Utils {
     }
 
     public static Object invokeMethod(URLMapping mapping, WebApplicationContext springContext,
-            HttpServletRequest request) throws Exception {
+            HttpServletRequest request,String session_key,String authurl) throws Exception {
+                MySession session = SessionManager.getSession(request);
+                if(mapping.getMethods().isAnnotationPresent(AuthRequired.class)){
+                    if(session.getAttribute(session_key)==null){
+                        
+                          return "redirect:"+authurl;
+                    
+                    }
+                }
         Object controller = mapping.getC()
                 .getDeclaredConstructor()
                 .newInstance();
@@ -133,6 +148,10 @@ public class Utils {
                 args[i] = springContext;
                 continue;
             }
+            if (type.equals(MySession.class)) {
+    args[i] = session;
+    continue;
+}
             if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
 
@@ -175,6 +194,15 @@ public class Utils {
         return mapping.getMethods().invoke(controller, args);
 
     }
+    private static boolean contientParametres(
+        HttpServletRequest request,
+        String prefix) {
+
+    return request.getParameterMap()
+            .keySet()
+            .stream()
+            .anyMatch(name -> name.startsWith(prefix + "."));
+}
 
     private static void remplirObjet(
             Class<?> type,
@@ -197,21 +225,47 @@ public class Utils {
 
                 Class<?> setterType = method.getParameterTypes()[0];
 
+
+                if (setterType.equals(MappingFile.class)) {
+
+    try {
+        Part part = request.getPart(param + "." + fieldName);
+
+        MappingFile fichier = convertirFichier(part);
+
+        method.invoke(obj, fichier);
+
+    } catch (Exception e) {
+        throw new RuntimeException(
+            "Erreur lors du traitement du fichier : " + fieldName,
+            e
+        );
+    }
+
+    continue;
+}
+
                 if (!setterType.isPrimitive()
                         && !setterType.equals(String.class)) {
 
-                    Object nestedObj = null;
+                   String nestedPrefix = param + "." + fieldName;
 
-                    try {
+    if (!contientParametres(request, nestedPrefix)) {
+        continue;
+    }
 
-                        nestedObj = setterType.getDeclaredConstructor().newInstance();
+    try {
+        Object nestedObj =
+                setterType.getDeclaredConstructor().newInstance();
 
-                        remplirObjet(
-                                setterType,
-                                nestedObj,
-                                request, fieldName);
+        remplirObjet(
+                setterType,
+                nestedObj,
+                request,
+                nestedPrefix
+        );
 
-                        method.invoke(obj, nestedObj);
+        method.invoke(obj, nestedObj);
 
                     } catch (InstantiationException
                             | IllegalAccessException
@@ -241,6 +295,104 @@ public class Utils {
             }
         }
     }
+
+        
+private static MappingFile convertirFichier(Part part)
+        throws IOException {
+
+    if (part == null || part.getSize() == 0) {
+        return null;
+    }
+
+    UploadConfig config = UploadConfig.load();
+
+    // Vérification de la taille
+    if (part.getSize() > config.getMaxFileSize()) {
+        throw new IllegalArgumentException(
+            "Fichier trop volumineux : " + part.getSize()
+            + " octets. Maximum autorisé : "
+            + config.getMaxFileSize() + " octets."
+        );
+    }
+
+    String submittedName = part.getSubmittedFileName();
+
+    if (submittedName == null || submittedName.isBlank()) {
+        throw new IllegalArgumentException(
+            "Nom de fichier manquant."
+        );
+    }
+
+    String nomOriginal = submittedName.replace('\\', '/');
+    nomOriginal = nomOriginal.substring(
+        nomOriginal.lastIndexOf('/') + 1
+    );
+
+    if (nomOriginal.isBlank()
+            || nomOriginal.equals(".")
+            || nomOriginal.equals("..")) {
+        throw new IllegalArgumentException(
+            "Nom de fichier invalide."
+        );
+    }
+
+    
+    int point = nomOriginal.lastIndexOf('.');
+    String extension = point > 0
+            ? nomOriginal.substring(point + 1)
+            : "";
+
+
+    byte[] contenu;
+
+    try (var input = part.getInputStream()) {
+        contenu = input.readAllBytes();
+    }
+
+    String nomStockage;
+
+    if (config.isOverwrite()) {
+        nomStockage = nomOriginal;
+    } else {
+        String extensionFichier = extension.isEmpty()
+                ? ""
+                : "." + extension;
+
+        nomStockage = java.util.UUID.randomUUID()
+                + extensionFichier;
+    }
+
+    Path destination = config.getDirectory()
+            .resolve(nomStockage)
+            .normalize();
+
+    // Vérifier que la destination reste dans le répertoire autorisé
+    if (!destination.getParent().equals(
+            config.getDirectory().toAbsolutePath().normalize())) {
+        throw new IllegalArgumentException(
+            "Destination de fichier invalide."
+        );
+    }
+
+  
+        java.nio.file.Files.write(
+            destination,
+            contenu,
+            java.nio.file.StandardOpenOption.CREATE_NEW
+        );
+    
+
+    // Construire l'objet transmis au contrôleur
+    MappingFile fichier = new MappingFile();
+    fichier.setNomFichier(nomOriginal);
+    fichier.setExtension(extension);
+    fichier.setContenu(contenu);
+    fichier.setCheminStockage(destination.toString());
+
+    return fichier;
+}
+
+    
 
     private static List<?> remplirList(
             Parameter parameter,
