@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import mg.itu.rohymvc.annotation.Api;
+import mg.itu.rohymvc.annotation.AuthRequired;
 import mg.itu.rohymvc.annotation.Controller;
 import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.url.URLMapping;
@@ -98,6 +100,7 @@ public class Utils {
                             mapped.setC(c);
                             mapped.setMethods(m);
                             URLMethod um = new URLMethod(annotation.url(), annotation.method());
+
                             if (urlMap.containsKey(um)) {
                                 throw new RuntimeException("L'URL: " + annotation.url() + " de methode:"
                                         + annotation.method() + " dans le controller " + c.getSimpleName()
@@ -113,7 +116,15 @@ public class Utils {
     }
 
     public static Object invokeMethod(URLMapping mapping, WebApplicationContext springContext,
-            HttpServletRequest request) throws Exception {
+            HttpServletRequest request,String session_key,String authurl) throws Exception {
+                MySession session = SessionManager.getSession(request);
+                if(mapping.getMethods().isAnnotationPresent(AuthRequired.class)){
+                    if(session.getAttribute(session_key)==null){
+                        
+                          return "redirect:"+authurl;
+                    
+                    }
+                }
         Object controller = mapping.getC()
                 .getDeclaredConstructor()
                 .newInstance();
@@ -138,7 +149,7 @@ public class Utils {
                 continue;
             }
             if (type.equals(MySession.class)) {
-    args[i] = SessionManager.getSession(request);
+    args[i] = session;
     continue;
 }
             if (type.isArray()) {

@@ -22,12 +22,15 @@ public class FrontServletController extends HttpServlet {
     HashMap<URLMethod, URLMapping> urlmapped;
     String prefix = "/WEB-INF/views/";
     String suffix = ".jsp";
+    String session_key = "user";
     private WebApplicationContext springContext;
 
     public void init() throws ServletException {
         urlmapped = (HashMap<URLMethod, URLMapping>) this.getServletContext().getAttribute("urlmappeds");
         prefix = this.getServletContext().getInitParameter("prefix");
         suffix = this.getServletContext().getInitParameter("suffix");
+        session_key = this.getServletContext().getInitParameter("session_key");
+
         ServletContext servletContext = getServletContext();
 
         springContext = WebApplicationContextUtils
@@ -67,7 +70,7 @@ public class FrontServletController extends HttpServlet {
             } else {
 
                 
-                Object result = Utils.invokeMethod(unique, springContext, request);
+                Object result = Utils.invokeMethod(unique, springContext, request,session_key);
 
                 Utils.renderView(result,unique, prefix, suffix, request, response);
             }
