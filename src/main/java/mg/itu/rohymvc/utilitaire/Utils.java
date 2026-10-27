@@ -23,6 +23,7 @@ import jakarta.servlet.http.Part;
 import mg.itu.rohymvc.annotation.Api;
 import mg.itu.rohymvc.annotation.AuthRequired;
 import mg.itu.rohymvc.annotation.Controller;
+import mg.itu.rohymvc.annotation.Role;
 import mg.itu.rohymvc.annotation.UrlMapping;
 import mg.itu.rohymvc.url.URLMapping;
 import mg.itu.rohymvc.url.URLMethod;
@@ -116,13 +117,24 @@ public class Utils {
     }
 
     public static Object invokeMethod(URLMapping mapping, WebApplicationContext springContext,
-            HttpServletRequest request,String session_key,String authurl) throws Exception {
+            HttpServletRequest request,String session_key,String role_key) throws Exception {
                 MySession session = SessionManager.getSession(request);
+               
                 if(mapping.getMethods().isAnnotationPresent(AuthRequired.class)){
                     if(session.getAttribute(session_key)==null){
                         
-                          return "redirect:"+authurl;
+                       throw new RuntimeException("Vous devez etre authentifie pour acceder a cette ressource");
                     
+                    }
+                }
+                else if(mapping.getMethods().isAnnotationPresent(Role.class)){
+                    if(session.getAttribute(session_key)==null){
+                        
+                       throw new RuntimeException("Vous devez etre authentifie pour acceder a cette ressource");
+                    
+                    }
+                    else if(session.getAttribute(role_key)==null || !session.getAttribute(role_key).equals(mapping.getMethods().getAnnotation(Role.class).nom())){
+                        throw new RuntimeException("Vous n'avez pas le role requis pour acceder a cette ressource");
                     }
                 }
         Object controller = mapping.getC()
